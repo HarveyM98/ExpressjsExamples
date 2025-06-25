@@ -1,5 +1,8 @@
 require('dotenv').config();
 const express = require('express');
+
+const { validateUser } = require('./utils/validation');
+
 const bodyParser = require('body-parser');
 
 const fs = require('fs');
@@ -11,14 +14,14 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 const PORT = process.env.PORT || 3000;
-console.log(PORT)
+console.log(PORT);
 
 app.get('/', (req, res) => {
     res.send(`
-        <h1>Curso Express.js </h1>
-        <p>Esto es una aplicacion node.js con express.js</p>
-        <p>Corre en el puerto: ${PORT}</p>
-        `);
+      <h1>Curso Express.js V3</h1>
+      <p>Esto es una aplicacion node.js con express.js</p>
+      <p>Corre en el puerto: ${PORT}</p>
+    `);
 });
 
 app.get('/users/:id', (req, res) => {
@@ -31,10 +34,10 @@ app.get('/search', (req, res) => {
     const category = req.query.categoria || 'Todas';
 
     res.send(`
-        <h2>Resultados de busqueda: </h2>
-        <p>Termino: ${terms}</p>
-        <p>Categoria: ${category}</p>
-        `)
+      <h2>Resultados de Busqueda:</h2>
+      <p>Termino: ${terms}</p>
+      <p>Categori­a: ${category}</p>
+    `);
 });
 
 app.post('/form', (req, res) => {
@@ -46,13 +49,13 @@ app.post('/form', (req, res) => {
             name,
             email
         }
-    })
+    });
 });
 
 app.post('/api/data', (req, res) => {
     const data = req.body;
 
-    if (!data || Object.keys(data).length == 0) {
+    if (!data || Object.keys(data).length === 0) {
         return res.status(400).json({ error: 'No se recibieron datos' });
     }
 
@@ -60,13 +63,12 @@ app.post('/api/data', (req, res) => {
         message: 'Datos JSON recibidos',
         data
     });
-
 });
 
 app.get('/users', (req, res) => {
     fs.readFile(usersFilePath, 'utf-8', (err, data) => {
         if (err) {
-            return res.status(500).json({ error: 'Error con la conexion de datos.' });
+            return res.status(500).json({ error: 'Error con conexion de datos.' });
         }
         const users = JSON.parse(data);
         res.json(users);
@@ -75,36 +77,19 @@ app.get('/users', (req, res) => {
 
 app.post('/users', (req, res) => {
     const newUser = req.body;
-    const name = newUser.name || 'Anonimo';
-    const email = newUser.email || 'No proporcionado';
-
-    const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-    if (!newUser || Object.keys(newUser).length == 0) {
-        return res.status(400).json({ error: 'No se recibieron datos' });
-    }
-
-    if (name.length < 3) {
-        return res.status(400).json({ error: 'El nombre debe de ser minimo 3 caracteres' });
-    }
-
-    if (email.length == 0 || !regex.test(email)) {
-        return res.status(400).json({ error: 'El email es invalido' });
-    }
-
     fs.readFile(usersFilePath, 'utf-8', (err, data) => {
         if (err) {
-            return res.status(500).json({ error: 'Error con la conexion de datos.' });
+            return res.status(500).json({ error: 'Error con conexion de datos.' });
         }
         const users = JSON.parse(data);
-        const lastId = users.length > 0 ? users[users.length - 1].id : 0;
-        const newUser = {
-            id: lastId + 1,
-            name,
-            email,
-        };
+
+        const validation = validateUser(newUser, users, 'create');
+        if (!validation.isValid) {
+            return res.status(400).json({ error: validation.error });
+        }
+
         users.push(newUser);
-        fs.writeFile(usersFilePath, JSON.stringify(users, null, 2), (err) => {
+        fs.writeFile(usersFilePath, JSON.stringify(users, null, 2), err => {
             if (err) {
                 return res.status(500).json({ error: 'Error al guardar el usuario.' });
             }
@@ -115,19 +100,28 @@ app.post('/users', (req, res) => {
 
 app.put('/users/:id', (req, res) => {
     const userId = parseInt(req.params.id, 10);
-    const { id, ...updatedUser } = req.body;
+    const { id, ...rest } = req.body;
+    const updatedUser = { id: userId, ...rest };
 
     fs.readFile(usersFilePath, 'utf-8', (err, data) => {
         if (err) {
-            return res.status(500).json({ error: 'Error con la conexion de datos.' })
+            return res.status(500).json({ error: 'Error con conexion de datos.' });
         }
         let users = JSON.parse(data);
+
+        const validation = validateUser(updatedUser, users);
+        if (!validation.isValid) {
+            return res.status(400).json({ error: validation.error });
+        }
+
         users = users.map(user =>
             user.id === userId ? { ...user, ...updatedUser } : user
         );
-        fs.writeFile(usersFilePath, JSON.stringify(users, null, 2), (err) => {
+        fs.writeFile(usersFilePath, JSON.stringify(users, null, 2), err => {
             if (err) {
-                return res.status(500).json({ error: 'Error al actualizar el usuario.' });
+                return res
+                    .status(500)
+                    .json({ error: 'Error al actualizar el usuario' });
             }
             res.json(updatedUser);
         });
@@ -136,4 +130,4 @@ app.put('/users/:id', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Servidor: http://localhost:${PORT}`);
-})
+});
