@@ -1,22 +1,32 @@
 const { PrismaClient } = require('../generated/prisma');
 const prisma = new PrismaClient();
 
-async function main() {
-    // const demoUsers = [
-    //     { name: 'Juan Perez', email: 'juan.perez@example.com' },
-    //     { name: 'Maria Lopez', email: 'maria.lopez@example.com' },
-    //     { name: 'Carlos Garcia', email: 'carlos.garcia@example.com' }
-    // ];
+const demoUsers = [
+    { name: 'Juan Perez', email: 'juan.perez@example.com' },
+    { name: 'Maria Lopez', email: 'maria.lopez@example.com' },
+    { name: 'Carlos Garcia', email: 'carlos.garcia@example.com' }
+];
 
-    // for (const user of demoUsers) {
-    //     await prisma.user.create({
-    //         data: user
-    //     });
-    // }
+async function seed() {
+    await prisma.user.createMany({ data: demoUsers });
+    console.log('✅ Usuarios de demostración creados.');
+}
 
-    // console.log('Usuarios de demostracion creados con exito');
-
+async function reset() {
     await prisma.user.deleteMany();
+    console.log('🗑️ Usuarios eliminados.');
+}
+
+async function main() {
+    const action = process.argv[2];
+
+    if (action === 'seed') {
+        await seed();
+    } else if (action === 'reset') {
+        await reset();
+    } else {
+        console.log('❌ Acción inválida. Usa: node seed.js [seed|reset]');
+    }
 }
 
 main()
