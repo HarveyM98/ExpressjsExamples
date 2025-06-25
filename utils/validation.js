@@ -33,10 +33,10 @@ function validateUser(user, users, mode = null) {
   if (mode === 'create' && !isUniqueId(id, users)) {
     return { isValid: false, error: 'El ID debe ser numerico y unico.' };
   }
-  if (mode != 'create' && !isNumericId(id)) {
+  if (mode !== 'create' && !isNumericId(id)) {
     return { isValid: false, error: 'El ID debe ser numerico' };
   }
-  if (mode != 'create' && !userExistsById(id, users)) {
+  if (mode !== 'create' && !userExistsById(id, users)) {
     return { isValid: false, error: `El usuario con ID: ${id}, no existe.` };
   }
   return { isValid: true };
