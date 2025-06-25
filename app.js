@@ -1,5 +1,7 @@
 require('dotenv').config();
 const express = require('express');
+const { PrismaClient } = require('./generated/prisma');
+const prisma = new PrismaClient();
 
 const loggerMiddleware = require('./middlewares/logger');
 const errorHandler = require('./middlewares/errorHandler');
@@ -143,7 +145,7 @@ app.delete('/users/:id', (req, res) => {
 
         fs.writeFile(usersFilePath, JSON.stringify(users, null, 2), (err) => {
             if (err) {
-                return res.status(500).json({ error: 'Error al eliminar usuario.'})
+                return res.status(500).json({ error: 'Error al eliminar usuario.' })
             }
             res.status(204).send();
         });
@@ -153,6 +155,17 @@ app.delete('/users/:id', (req, res) => {
 app.get('/error', (req, res, next) => {
     next(new Error('Error intencional'));
 });
+
+app.get('/db-users', async (req, res) => {
+    try {
+        const users = await prisma.user.findMany();
+        res.json(users);
+
+    } catch (error) {
+        res.status(500).json({ error: 'Error al comunicarse con la base de datos.' });
+    }
+});
+
 
 app.use(errorHandler);
 
