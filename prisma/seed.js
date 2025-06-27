@@ -1,32 +1,59 @@
+// prisma/seed.js
+
 const { PrismaClient } = require('../generated/prisma');
 const prisma = new PrismaClient();
 
-const demoUsers = [
-    { name: 'Juan Perez', email: 'juan.perez@example.com' },
-    { name: 'Maria Lopez', email: 'maria.lopez@example.com' },
-    { name: 'Carlos Garcia', email: 'carlos.garcia@example.com' }
-];
-
-async function seed() {
-    await prisma.user.createMany({ data: demoUsers });
-    console.log('✅ Usuarios de demostración creados.');
-}
-
-async function reset() {
-    await prisma.user.deleteMany();
-    console.log('🗑️ Usuarios eliminados.');
-}
-
 async function main() {
-    const action = process.argv[2];
+    // Crear usuarios
+    const user1 = await prisma.user.create({
+        data: {
+            email: 'user1@example.com',
+            password: 'password123',
+            name: 'User One',
+            role: 'USER'
+        }
+    });
 
-    if (action === 'seed') {
-        await seed();
-    } else if (action === 'reset') {
-        await reset();
-    } else {
-        console.log('❌ Acción inválida. Usa: node seed.js [seed|reset]');
-    }
+    const user2 = await prisma.user.create({
+        data: {
+            email: 'admin@example.com',
+            password: 'admin123',
+            name: 'Admin User',
+            role: 'ADMIN'
+        }
+    });
+
+    // Crear bloques de tiempo
+    const timeBlock1 = await prisma.timeBlock.create({
+        data: {
+            startTime: new Date('2023-10-01T09:00:00Z'),
+            endTime: new Date('2023-10-01T10:00:00Z')
+        }
+    });
+
+    const timeBlock2 = await prisma.timeBlock.create({
+        data: {
+            startTime: new Date('2023-10-01T10:00:00Z'),
+            endTime: new Date('2023-10-01T11:00:00Z')
+        }
+    });
+
+    // Crear citas
+    await prisma.appointment.create({
+        data: {
+            date: new Date('2023-10-01T09:00:00Z'),
+            user: { connect: { id: user1.id } },
+            timeBlock: { connect: { id: timeBlock1.id } }
+        }
+    });
+
+    await prisma.appointment.create({
+        data: {
+            date: new Date('2023-10-01T10:00:00Z'),
+            user: { connect: { id: user2.id } },
+            timeBlock: { connect: { id: timeBlock2.id } }
+        }
+    });
 }
 
 main()
