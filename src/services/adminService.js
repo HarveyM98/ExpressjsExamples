@@ -21,4 +21,4 @@ const listReservationsService = async () => {
     return reservations;
 };
 
-module.exports = { createTimeBlockService, listReservationsService};
+module.exports = { createTimeBlockService, listReservationsService };
